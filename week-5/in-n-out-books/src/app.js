@@ -215,6 +215,61 @@ app.get("/api/books/:id", async (req, res, next) => {
   }
 });
 
+// Route that adds a new book to the mock database and returns a 201-status code
+app.post("/api/books", async (req, res, next) => {
+  try {
+    // Assign the request body to a variable named newBook
+    const newBook = req.body;
+
+    // Create an array containing only the properties that are allowed for a
+    // book object
+    const expectedKeys = ["id", "title", "author"];
+    // Retrieve all of the keys from the request body
+    const receivedKeys = Object.keys(newBook);
+
+    // Check if the fields from the request body match the allowable fields in
+    // the expected keys array and whether the length of the fields being sent
+    // in the request body match the number of fields in the expected keys array.
+    if (!receivedKeys.every(key => expectedKeys.includes(key)) ||
+    receivedKeys.length !== expectedKeys.length) {
+      // Logs Bad Request error message
+      console.error("Bad Request: Missing keys or extra keys", receivedKeys);
+      // Return Bad Request error to the next middleware
+      return next(createError(400, "Bad Request"));
+    }
+
+    const result = await books.insertOne(newBook); // Insert a new book
+    console.log("Result: ", result); // Logs the result
+    // Return a status code of 201 and the ID of the newly created book
+    res.status(201).send({ id: result.ops[0].id});
+  } catch (err) {
+    console.error("Error: ", err.message); // Logs error message
+    next(err); // Passes error to the next middleware
+  }
+});
+
+// Route that deletes a book with the matching id from the mock database and
+// returns a 204-status code
+app.delete("/api/books/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params; // Declaring the id property
+    const result = await books.deleteOne({ id: parseInt(id) }); // Remove a book
+    console.log("Result: ", result); // Logs the result
+    // Return a status code of 204 to the client, indicating the record was
+    // removed from the mock database
+    res.status(204).send();
+  } catch (err) {
+    // Check if the error message is "No matching item found"
+    if (err.message === "No matching item found") {
+      // Return Book not found error to the next middleware
+      return next(createError(404, "Book not found"));
+    }
+
+    console.error("Error: ", err.message); // Logs error message
+    next(err); // Passes error to the next middleware
+  }
+});
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
