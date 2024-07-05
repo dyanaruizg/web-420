@@ -8,7 +8,7 @@
 const app = require("../src/app");
 const request = require("supertest");
 
-// Create a new test suite using Jest’s describe method
+// Create a new test suite for Chapter 3: API Tests using Jest’s describe method
 describe("Chapter 3: API Tests", () => {
   // Check if an array of recipes is returned when a client calls the endpoint: /api/recipes
   it("it should return an array of recipes", async () => {
@@ -38,7 +38,7 @@ describe("Chapter 3: API Tests", () => {
     expect(res.body).toHaveProperty("ingredients", ["flour", "milk", "eggs"]);
   });
 
-  // Check if a 400 error is returned when the ID is not a number.
+  // Check if a 400 error is returned when the ID is not a number
   it("should return a 400 error if the id is not a number", async () => {
     const res = await request(app).get("/api/recipes/foo");
 
@@ -48,10 +48,10 @@ describe("Chapter 3: API Tests", () => {
   });
 });
 
-// Create a new test suite for Chapter 4: API Tests.
+// Create a new test suite for Chapter 4: API Tests
 describe("Chapter 4: API Tests", () => {
   // Add a unit test that checks if the /api/recipes POST endpoint returns a 201
-  // status code for successful creations.
+  // status code for successful creations
   it("should return a 201 status code when adding a new recipe", async () => {
     const res = await request(app).post("/api/recipes").send({
       id: 99,
@@ -63,7 +63,7 @@ describe("Chapter 4: API Tests", () => {
   });
 
   // Add a unit test that checks if a 400 error is returned with a message of
-  // ‘Bad Request’ when adding a new recipe with missing name.
+  // ‘Bad Request’ when adding a new recipe with missing name
   it("should return a 400 status code when adding a new recipe with missing name",
   async () => {
     const res = await request(app).post("/api/recipes").send({
@@ -72,7 +72,7 @@ describe("Chapter 4: API Tests", () => {
     });
 
     expect(res.statusCode).toEqual(400); // Check 400 status code
-    // Check the response body message to equal ‘Bad Request’.
+    // Check the response body message to equal ‘Bad Request’
     expect(res.body.message).toEqual("Bad Request");
   });
 
@@ -81,5 +81,54 @@ describe("Chapter 4: API Tests", () => {
     const res = await request(app).delete("/api/recipes/99");
 
     expect(res.statusCode).toEqual(204); // Check 204 status code
+  });
+});
+
+// Create a new test suite for Chapter 5: API Tests
+describe("Chapter 5: API Tests", () => {
+  // Add a unit test that checks if a 204 status code is returned when a recipe is
+  // successfully updated
+  it("should return a 204 status code when updating a recipe", async () => {
+    const res = await request(app).put("/api/recipes/1").send({
+      name: "Pancakes",
+      ingredients: ["flour", "milk", "eggs", "sugar"]
+    })
+
+    expect(res.statusCode).toEqual(204); // Check 204 status code
+  });
+
+  // Add a unit test that checks if a 400 error is return when the ID is not a number
+  it("should return a 400 status code when updating a recipe with a non-numeric id",
+  async () => {
+    const res = await request(app).put("/api/recipes/foo").send({
+      name: "Test Recipe",
+      ingredients: ["test", "test"]
+    });
+
+    expect(res.statusCode).toEqual(400); // Check 204 status code
+    // Check the response body message to equal “Input must be a number”
+    expect(res.body.message).toEqual("Input must be a number");
+  });
+
+  // Add a unit test that checks if a 400 error is returned when updating a recipe
+  // with missing or extra keys
+  it("should return a 400 status code when updating a recipe with missing keys or extra keys",
+  async () => {
+    const res = await request(app).put("/api/recipes/1").send({
+      name: "Test Recipe"
+    });
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.message).toEqual("Bad Request");
+
+    const res2 = await request(app).put("/api/recipes/1").send({
+      name: "Test Recipe",
+      ingredients: ["test", "test"],
+      extraKey: "extra"
+    });
+
+    expect(res2.statusCode).toEqual(400); // Check 204 status code
+    // Check the response body message to equal “Bad Request”
+    expect(res2.body.message).toEqual("Bad Request");
   });
 });
