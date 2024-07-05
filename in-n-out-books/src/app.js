@@ -253,7 +253,8 @@ app.post("/api/books", async (req, res, next) => {
 app.delete("/api/books/:id", async (req, res, next) => {
   try {
     const { id } = req.params; // Declaring the id property
-    const result = await books.deleteOne({ id: parseInt(id) }); // Remove a book
+    // Remove the book by its ID
+    const result = await books.deleteOne({ id: parseInt(id) });
     console.log("Result: ", result); // Logs the result
     // Return a status code of 204 to the client, indicating the record was
     // removed from the mock database
@@ -261,6 +262,58 @@ app.delete("/api/books/:id", async (req, res, next) => {
   } catch (err) {
     // Check if the error message is "No matching item found"
     if (err.message === "No matching item found") {
+      // Logs the Book not found error
+      console.log("Book not found", err.message);
+      // Return Book not found error to the next middleware
+      return next(createError(404, "Book not found"));
+    }
+
+    console.error("Error: ", err.message); // Logs error message
+    next(err); // Passes error to the next middleware
+  }
+});
+
+// Route that updates a book with the matching id in the mock database and
+// returns a 204-status code
+app.put("/api/books/:id", async (req, res, next) => {
+  try {
+    let { id } = req.params; // Declaring the id property
+    let book = req.body; // Assign the request body to a variable named book
+    id = parseInt(id); // Parsing the string value into a numerical one
+
+    // Check if the id is not a number
+    if (isNaN(id)) {
+      // Throwing a 400 error if it is not a number
+      return next(createError(400, "Input must be a number"));
+    }
+
+    // Create an array containing only the properties that are allowed for a
+    // book object
+    const expectedKeys = ["title", "author"];
+    // Retrieve all of the keys from the request body
+    const receivedKeys = Object.keys(book);
+
+    // Check if the fields from the request body match the allowable fields in
+    // the expected keys array and whether the length of the fields being sent
+    // in the request body match the number of fields in the expected keys array.
+    if (!receivedKeys.every(key => expectedKeys.includes(key)) ||
+    receivedKeys.length !== expectedKeys.length) {
+      // Logs Bad Request error message
+      console.error("Bad Request: Missing keys or extra keys", receivedKeys);
+      // Return Bad Request error to the next middleware
+      return next(createError(400, "Bad Request"));
+    }
+
+    // Update the book by its ID
+    const result = await books.updateOne({ id: id }, book);
+    console.log("Result: ", result); // Logs the result
+    // Send a 204 status code, indicating the request was successful
+    res.status(204).send();
+  } catch (err) {
+    // Check if the error message is "No matching item found"
+    if (err.message === "No matching item found") {
+      // Logs the Book not found error
+      console.log("Book not found", err.message);
       // Return Book not found error to the next middleware
       return next(createError(404, "Book not found"));
     }

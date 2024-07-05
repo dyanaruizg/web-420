@@ -106,3 +106,52 @@ describe("Chapter 4: API Tests", () => {
     expect(res.statusCode).toEqual(204);
   });
 });
+
+// Create a new test suite for Chapter 5: API Tests
+describe("Chapter 5: API Tests", () => {
+  // Add a unit test that checks if a 204 status code is returned when a book is
+  // successfully updated
+  it("should update a book and return a 204-status code", async () => {
+    // Send a PUT request to the /api/books/:id endpoint and waits for a
+    // response using the supertest npm package
+    const res = await request(app).put("/api/books/5").send({
+      title: "The New Shadow",
+      author: "J.R.R. Tolkien"
+    })
+
+    // Check if the response status code is 204 for successful update
+    expect(res.statusCode).toEqual(204);
+  });
+
+  // Add a unit test that checks if a 400 error is return when the ID is not a number
+  it("should return a 400-status code when using a non-numeric id",
+  async () => {
+    // Send a PUT request to the /api/books/:id endpoint and waits for a
+    // response using the supertest npm package
+    const res = await request(app).put("/api/books/foo").send({
+      title: "The New Shadow",
+      author: "J.R.R. Tolkien"
+    });
+
+    // Check if the response status code is 400 for errors
+    expect(res.statusCode).toEqual(400);
+    // Check if the response body message is "Input must be a number"
+    expect(res.body.message).toEqual("Input must be a number");
+  });
+
+  // Add a unit test that checks if a 400 error is returned when updating a book
+  // with a missing title
+  it("should return a 400-status code when updating a book with a missing title",
+  async () => {
+    // Send a PUT request to the /api/books/:id endpoint and waits for a
+    // response using the supertest npm package
+    const res = await request(app).put("/api/books/1").send({
+      author: "J.R.R. Tolkien"
+    });
+
+    // Check if the response status code is 400 for errors
+    expect(res.statusCode).toEqual(400);
+    // Check if the response body message is "Bad Request"
+    expect(res.body.message).toEqual("Bad Request");
+  });
+});
