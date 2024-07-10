@@ -9,8 +9,10 @@
 const express = require("express");
 const createError = require("http-errors");
 const path = require('path');
+const bcrypt = require("bcryptjs");
 
 const books = require("../database/books"); // Add the books.js file
+const users = require("../database/users"); // Add the users.js file.
 
 const app = express(); // Creates an Express application
 
@@ -318,6 +320,57 @@ app.put("/api/books/:id", async (req, res, next) => {
       return next(createError(404, "Book not found"));
     }
 
+    console.error("Error: ", err.message); // Logs error message
+    next(err); // Passes error to the next middleware
+  }
+});
+
+// Route that logs a user in and returns a 200-status code
+app.post("/api/login", async (req, res, next) => {
+  try {
+    const user = req.body; // Assign the request body to a variable named user
+
+    // Create an array containing only the properties that are allowed for a
+    // user object
+    const expectedKeys = ["email", "password"];
+    // Retrieve all of the keys from the request body
+    const receivedKeys = Object.keys(user);
+
+    // Check if the fields from the request body match the allowable fields in
+    // the expected keys array and whether the length of the fields being sent
+    // in the request body match the number of fields in the expected keys array.
+    if (!receivedKeys.every(key => expectedKeys.includes(key)) ||
+    receivedKeys.length !== expectedKeys.length) {
+      // Logs Bad Request error message
+      console.error("Bad Request: Missing keys or extra keys", receivedKeys);
+      // Return Bad Request error to the next middleware
+      return next(createError(400, "Bad Request"));
+    }
+
+    // Define a variable for a potential authentication user
+    let AuthUser;
+    try {
+      AuthUser = await users.findOne({ email: user.email }); // Find user by email
+    } catch (err) {
+      // Set the variable to null for use cases when the email address is not in use
+      AuthUser = null;
+    }
+
+    // Defines a variable that checks that the entered password match with the
+    // password of the potential authentication user
+    const comparePassword = bcrypt.compareSync(user.password, AuthUser.password);
+
+    // Check if the password is invalid
+    if (!comparePassword) {
+      console.error("Unauthorized: Invalid Password."); // Logs error
+      // Return Unauthorized error to the next middleware
+      return next(createError(401, "Unauthorized"));
+    }
+
+    // Send the login user object back to the client with a message of
+    // "Authentication successful" and a status code of 200
+    res.status(200).send({ user: user, message: "Authentication successful"});
+  } catch (err) {
     console.error("Error: ", err.message); // Logs error message
     next(err); // Passes error to the next middleware
   }

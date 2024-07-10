@@ -155,3 +155,53 @@ describe("Chapter 5: API Tests", () => {
     expect(res.body.message).toEqual("Bad Request");
   });
 });
+
+// Create a new test suite for Chapter 6: API Tests
+describe("Chapter 6: API Tests", () => {
+  // Add a unit test to check if a 200 status code is returned with a message of
+  // "Authentication successful" when log a user in.
+  it("should log a user in and return a 200-status with 'Authentication " +
+  "successful' message", async () => {
+    // Send a POST request to /api/login endpoint and waits for a response
+    // using the supertest npm package
+    const res = await request(app).post("/api/login").send({
+      email: "harry@hogwarts.edu",
+      password: "potter"
+    });
+
+    expect(res.statusCode).toEqual(200); // Check if the status code is 200
+    // Check if the response body has a message of “Registration successful”
+    expect(res.body.message).toEqual("Authentication successful");
+  });
+
+  // Add a new unit test to check if a 401 status code is returned with the message
+  // 'Unauthorized' when logging in with incorrect credentials.
+  it("should return a 401-status code with 'Unauthorized' message when logging " +
+  "in with incorrect credentials", async () => {
+    // Send a POST request to /api/login endpoint and waits for a response
+    // using the supertest npm package
+    const res = await request(app).post("/api/login").send({
+      email: "harry@hogwarts.edu",
+      password: "hogwarts"
+    });
+
+    expect(res.statusCode).toEqual(401); // Check if the status code is 401
+    // Check if the response body has a message of "Unauthorized"
+    expect(res.body.message).toEqual("Unauthorized");
+  });
+
+  // Add a unit test to check if a status code of 400 is returned with a message
+  // of “Bad Request” when  missing email or password.
+  it("should return a 400 status code with 'Bad Request' when missing email " +
+  "or password", async () => {
+    // Send a POST request to /api/login endpoint and waits for a response
+    // using the supertest npm package
+    const res = await request(app).post("/api/login").send({
+      email: "harry@hogwarts.edu"
+    });
+
+    expect(res.statusCode).toEqual(400); // Check if the status code is 400
+    // Check if the response body has a message of “Bad Request”
+    expect(res.body.message).toEqual("Bad Request");
+  });
+});
