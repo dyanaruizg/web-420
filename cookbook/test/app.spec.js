@@ -105,7 +105,7 @@ describe("Chapter 5: API Tests", () => {
       ingredients: ["test", "test"]
     });
 
-    expect(res.statusCode).toEqual(400); // Check 204 status code
+    expect(res.statusCode).toEqual(400); // Check 400 status code
     // Check the response body message to equal “Input must be a number”
     expect(res.body.message).toEqual("Input must be a number");
   });
@@ -127,8 +127,62 @@ describe("Chapter 5: API Tests", () => {
       extraKey: "extra"
     });
 
-    expect(res2.statusCode).toEqual(400); // Check 204 status code
+    expect(res2.statusCode).toEqual(400); // Check 400 status code
     // Check the response body message to equal “Bad Request”
+    expect(res2.body.message).toEqual("Bad Request");
+  });
+});
+
+// Create a new test suite for Chapter 6: API Tests
+describe("Chapter 6: API Tests", () => {
+  // Add a unit test to check if a 200 status code is returned with a message of
+  // “Registration successful” when registering a new user.
+  it("should return a 200 status code with a message of 'Registration successful' " +
+  "when registering a new user", async () => {
+    const res = await request(app).post("/api/register").send({
+      email: "cedric@hogwarts.edu",
+      password: "diggory"
+    });
+
+    expect(res.statusCode).toEqual(200); // Check 200 status code
+    // Check if the response body has a message of “Registration successful”
+    expect(res.body.message).toEqual("Registration successful");
+  });
+
+  // Add a new unit test to check if a 409 status code is returned with the message
+  // “Conflict” when registering a user with a duplicate email address.
+  it("should return a 409 status code with a message of 'Conflict' when registering " +
+  "a user with a duplicate email", async () => {
+    const res = await request(app).post("/api/register").send({
+      email: "harry@hogwarts.edu",
+      password: "potter"
+    });
+
+    expect(res.statusCode).toEqual(409); // Check 409 status code
+    // Check if the response body message has a message of “Conflict”
+    expect(res.body.message).toEqual("Conflict");
+  });
+
+  // Add a unit test to check if a status code of 400 is returned with a message
+  // of “Bad Request” when using too many or too few parameter values.
+  it("should return a 400 status code when registering a new user with too many " +
+  "or too few parameter values", async () => {
+    const res = await request(app).post("/api/register").send({
+      email: "cedric@hogwarts.edu",
+      password: "diggory",
+      extraKey: "extra"
+    });
+
+    expect(res.statusCode).toEqual(400); // Check 400 status code
+    // Check if the response body has a message of “Bad Request”
+    expect(res.body.message).toEqual("Bad Request");
+
+    const res2 = await request(app).post("/api/register").send({
+      email: "cedric@hogwarts.edu"
+    });
+
+    expect(res2.statusCode).toEqual(400); // Check 400 status code
+    // Check if the response body has a message of “Bad Request”
     expect(res2.body.message).toEqual("Bad Request");
   });
 });
