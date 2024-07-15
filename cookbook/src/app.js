@@ -4,6 +4,7 @@
   Description: Building a Cookbook App – An API-based application with a landing page
 */
 
+// Add the require statements
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const createError = require("http-errors");
@@ -15,6 +16,33 @@ const recipes = require("../database/recipes");
 
 // Add a require statement for the users.js file.
 const users = require("../database/users");
+
+// Add a require statement for the ajv npm package
+const Ajv = require("ajv");
+// Create a new instance of the Ajv class
+const ajv = new Ajv();
+
+// Create an Ajv JSON Schema validator, which will be used to validate the request
+// body of our POST request
+const securityQuestionsSchema = {
+  type: "object",
+  properties: {
+    newPassword: { type: "string" },
+    securityQuestions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          answer: { type: "string" }
+        },
+        required: ["answer"],
+        additionalProperties: false
+      }
+    }
+  },
+  required: ["newPassword", "securityQuestions"],
+  additionalProperties: false
+};
 
 app.use(express.json()); // Parse incoming requests as JSON payloads
 app.use(express.urlencoded({ extended: true })); // Parse incoming urlencoded payloads
@@ -218,6 +246,43 @@ app.post("/api/register", async (req, res, next) => {
     });
 
     res.status(200).send({ user: newUser, message: "Registration successful"});
+  } catch (err) {
+    console.error("Error: ", err);
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
+// Create a new POST endpoint for /api/users/:email/password-reset.
+app.post("/api/users/:email/reset-password", async (req, res, next) => {
+  try {
+    const { email } = req.params;
+    const { newPassword, securityQuestions } = req.body;
+
+    const validate = ajv.compile(securityQuestionsSchema);
+    const valid = validate(req.body);
+
+    if (!valid) {
+      console.error("Bad Request: Invalid request body", validate.errors);
+      return next(createError(400, "Bad Request"));
+    }
+
+    const user = await users.findOne({ email: email });
+
+    if (securityQuestions[0].answer !== user.securityQuestions[0].answer ||
+    securityQuestions[1].answer !== user.securityQuestions[1].answer ||
+    securityQuestions[2].answer !== user.securityQuestions[2].answer) {
+      console.error("Unauthorized: Security questions do not match");
+      return next(createError(401, "Unauthorized"));
+    }
+
+    const hashedPassword = bcrypt.hashSync(newPassword, 10);
+    user.password = hashedPassword;
+
+    const result = await users.updateOne({ email: email }, {user});
+
+    console.log("Result: ", result);
+    res.status(200).send({ message: "Password reset successful", user: user});
   } catch (err) {
     console.error("Error: ", err);
     console.error("Error: ", err.message);
