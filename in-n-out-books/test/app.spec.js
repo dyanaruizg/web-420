@@ -205,3 +205,69 @@ describe("Chapter 6: API Tests", () => {
     expect(res.body.message).toEqual("Bad Request");
   });
 });
+
+// Create a new test suite for Chapter 7: API Tests
+describe("Chapter 7: API Tests", () => {
+  // Define a unit test that checks if a 200 status code is returned with a
+  // message of “Security questions successfully answered”.
+  it("should return a 200 status with 'Security questions successfully answered' " +
+  "message", async() => {
+    // Send a POST request to /api/users/:email/verify-security-question endpoint
+    // and waits for a response, using the supertest npm package.
+    const res = await request(app)
+    .post("/api/users/hermione@hogwarts.edu/verify-security-question").send({
+      securityQuestions: [
+        { answer: "Crookshanks" },
+        { answer: "Hogwarts: A History" },
+        { answer: "Wilkins" }
+      ]
+    });
+
+    // Check if the response status code is 200
+    expect(res.statusCode).toEqual(200);
+    // Check if the respond body has a message of "Security questions successfully
+    // answered"
+    expect(res.body.message).toEqual("Security questions successfully answered");
+  });
+
+  // Define a unit test that checks if a 400 status code with a message of
+  // “Bad Request” is returned when the request body fails ajv validation.
+  it("should return a 400 status code with 'Bad Request' message when the " +
+  "request body fails ajv validation", async() => {
+    // Send a POST request to /api/users/:email/verify-security-question endpoint
+    // and waits for a response, using the supertest npm package.
+    const res = await request(app)
+    .post("/api/users/hermione@hogwarts.edu/verify-security-question").send({
+      securityQuestions: [
+        { answer: "Crookshanks", question: "What is your pet's name?" },
+        { answer: "Hogwarts: A History", teacher: "Minerva McGonagall" }
+      ]
+    });
+
+    // Check if the response status code is 400
+    expect(res.statusCode).toEqual(400);
+    // Check if the response body has a message of “Bad Request”
+    expect(res.body.message).toEqual("Bad Request");
+  });
+
+  // Define a unit test that checks if a 401 error is returned with a message of
+  // “Unauthorized” when the security answers are incorrect.
+  it("should return a 401 status code with 'Unauthorized' message when the " +
+  "security answers are incorrect", async() => {
+    // Send a POST request to /api/users/:email/verify-security-question endpoint
+    // and waits for a response, using the supertest npm package.
+    const res = await request(app)
+    .post("/api/users/hermione@hogwarts.edu/verify-security-question").send({
+      securityQuestions: [
+        { answer: "Hedwig" },
+        { answer: "The Quibbler" },
+        { answer: "Wilkins" }
+      ]
+    });
+
+    // Check if the response status code is 401
+    expect(res.statusCode).toEqual(401);
+    // Check if the response body has a message of "Unauthorized"
+    expect(res.body.message).toEqual("Unauthorized");
+  });
+});

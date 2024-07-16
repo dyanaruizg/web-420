@@ -16,6 +16,31 @@ const users = require("../database/users"); // Add the users.js file.
 
 const app = express(); // Creates an Express application
 
+
+const Ajv = require("ajv"); // Add a require statement for the ajv npm package
+const ajv = new Ajv(); // Create a new instance of the Ajv class
+
+// Create an Ajv JSON Schema validator, which will be used to validate the request
+// body of our POST request
+const securityQuestionsSchema = {
+  type: "object",
+  properties: {
+    securityQuestions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          answer: { type: "string" }
+        },
+        required: ["answer"],
+        additionalProperties: false
+      }
+    }
+  },
+  required: ["securityQuestions"],
+  additionalProperties: false
+};
+
 app.use(express.json()); // Parse incoming requests as JSON payloads
 app.use(express.urlencoded({ extended: true })); // Parse incoming urlencoded payloads
 app.use(express.static(path.join(__dirname, 'public'))); // Access static files from the public directory
@@ -370,6 +395,48 @@ app.post("/api/login", async (req, res, next) => {
     // Send the login user object back to the client with a message of
     // "Authentication successful" and a status code of 200
     res.status(200).send({ user: user, message: "Authentication successful"});
+  } catch (err) {
+    console.error("Error: ", err.message); // Logs error message
+    next(err); // Passes error to the next middleware
+  }
+});
+
+// Route that verifies a user’s security questions and returns a 200-status
+app.post("/api/users/:email/verify-security-question", async (req, res, next) => {
+  try {
+    // Retrieve the email from the request params object
+    const { email } = req.params;
+    // Retrieve the securityQuestions fields from the request body
+    const { securityQuestions } = req.body;
+
+    // Compile the Ajv JSON Schema and prepares it for validation
+    const validate = ajv.compile(securityQuestionsSchema);
+    // Use the Ajv JSON Schema to validate it against the request body
+    const valid = validate(req.body);
+
+    // Check if the validation has not passed
+    if (!valid) {
+      // Logs error validation
+      console.error("Bad Request: Invalid request body", validate.errors);
+      // Return Bad Request error to the next middleware
+      return next(createError(400, "Bad Request"));
+    }
+
+    // Retrieve a user from the mock database using the passed-in email address
+    const user = await users.findOne({ email: email });
+
+    // Check the saved security question answers against what’s being passed in
+    // the body of the request
+    if (securityQuestions[0].answer !== user.securityQuestions[0].answer ||
+    securityQuestions[1].answer !== user.securityQuestions[1].answer ||
+    securityQuestions[2].answer !== user.securityQuestions[2].answer) {
+      console.error("Unauthorized: Security questions do not match"); // Logs error
+      // Return Unauthorized error to the next middleware
+      return next(createError(401, "Unauthorized"));
+    }
+
+    // Send a success message and a status code of 200
+    res.status(200).send({ message: "Security questions successfully answered" });
   } catch (err) {
     console.error("Error: ", err.message); // Logs error message
     next(err); // Passes error to the next middleware
